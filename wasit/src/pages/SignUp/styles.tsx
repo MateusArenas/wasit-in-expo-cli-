@@ -17,12 +17,12 @@ export const Input = styled.TextInput.attrs({
   font-size: 14px;
   border: 2px solid ${props => 
     props.sucesss ? "lightsteelblue" 
-      : props.error ? "red" : "rgba(0,0,0,.1)"};
+      : props.error ? "#ba4d4c" : "rgba(0,0,0,.1)"};
 `
 
 export const ErrorMessage = styled.Text`
   text-align: center;
-  color: #ce2029;
+  color: #ba4d4c;
   font-size: 10px;
   margin: 15px 15px;
   margin-top: 0;

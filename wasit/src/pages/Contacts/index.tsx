@@ -5,14 +5,14 @@ import { Container, ItemContainer, ItemName, ItemPhone, ItemProfile, Loading, Pu
 // import api from '../../services/api';
 // import ContactModel from '../../models/contact'
 import PullToRefreshHeader from '../../components/PullToRefreshHeader'
-
+import { MaterialIcons } from '@expo/vector-icons'; 
 import useContacts from '../../hooks/useContacts';
 
 const Contacts: React.FC = () => {
   const navigation = useNavigation()
-  const { page, contacts, loadPage, loading, refreshList, refreshing } = useContacts(12)
+  const { page, contacts, loadPage, loading, refreshList, refreshing } = useContacts(120)
 
-  // useScrollToTop(ref)
+  // useScrollToTop(ref)  
 
   function handleOpenContactChat(contact: any) {
     try {
@@ -59,7 +59,9 @@ const Contacts: React.FC = () => {
             onPress={() => handleOpenContactChat(item)}
             >
             <ItemContainer>
-              <ItemProfile />
+              <ItemProfile >
+                <MaterialIcons name="account-circle" size={50} color="lightgray" />
+              </ItemProfile>
               <ItemName>{item.username}</ItemName>
               <ItemName>{item.phone}</ItemName>
               {/* {item.phoneNumbers.map((phone, key) => <ItemPhone key={key}>{phone.number}</ItemPhone>)} */}

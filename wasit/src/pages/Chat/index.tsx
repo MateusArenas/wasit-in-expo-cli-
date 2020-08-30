@@ -1,14 +1,15 @@
-import React, { useEffect, useState, useCallback, useContext } from 'react';
-
-import { Container, KeyboardSpacer, BackgroundContainerList } from './styles';
+import React, { useEffect, useState, useCallback, useContext, useMemo, useRef } from 'react';
+import { Container, BackgroundContainerList } from './styles';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import ChatSendBar from '../../components/ChatSendBar'
-import Message from '../../models/message'
+import Message from '../../models/chatMessage'
 import AuthContext from '../../contexts/auth'
 import MessageBubble from '../../components/ChatMessageBubble'
-import api from '../../services/api';
-import { createDateFormat  } from '../../utils/dateFormat'
-import ChatMessageModel from '../../models/message'
+import { ImageBackground, ActivityIndicator } from 'react-native'
+import useChat from '../../hooks/useChat';
+import ChatHeader from '../../components/ChatHeader'
+import { useSelector, useDispatch } from 'react-redux'
+import { Loading } from '../Contacts/styles';
 
 interface chatI {
   name: string
@@ -24,134 +25,152 @@ interface messageI {
   content: string
 }
 
-const Chat: React.FC = () => {
-  const navigation = useNavigation()
-  const [chat, setChat] = useState<any | null>(null)
-  const { params } = useRoute()
-  const { contact, isGroup, currentChat } = params as any
-  const [text, setText] = useState<string | null>(null)
-  const [messages, setMessages] = useState<Array<any>>([])
+const Chat: React.FC<any> = (props: any) => {
+  const { socket, pageSize } = props?.extraData
+  const flatListRef = useRef(null)
   const { user } = useContext(AuthContext)
+  const navigation = useNavigation()
+  const { params } = useRoute()
+  const { contact, isGroup, chatId } = params as any
+  const { chat, sendMessage } = useChat({ contact, chatId, socket })
+  const [text, setText] = useState<string | null>(null)
+  const [lastText, setLastText] = useState<string | null>(null)
 
-  useEffect(() => {
-    (async () => {   
-      if (chat) {
-        await loadChatMessages()
-        navigation.setOptions({ headerTitle: chat.name })
-        console.log(chat);   
-      } else {
-        if (currentChat) setChat(currentChat)
-      }
-    })()
+  const dispatch = useDispatch()
+  const [status, setStatus] = useState('')
+
+  const { data: messages, type, self, loading, hasNextPage } = useSelector(({ messages }) => {
+    return ({ 
+      ...messages,
+      data: messages?.data.filter(message => message?.chatId === chat?.chatId),
+    })
   }, [chat])
 
-  useEffect(() => {
-    (async () => {
-      if (!currentChat) {
-        if (!isGroup) {
-          await searchChatDirectByMemberId()
-        } else {
-  
-        }
-      }
-    })()
-  }, [])
+  const [page, setPage] = useState(1)
 
-  async function searchChatDirectByMemberId() {
-    try {
-      const { data: { value: [data] } } = await api.get('/chats', { params: { 
-        chatMemberUserIds: [contact.userId, user.id],
-        group: false  
-      } })
-      setChat(data)
-    } catch(err) {
-      if (!err.response) { // network error
-        // procurar no db local
-        console.log(err);
-        
-      } else { // http status code
-        // não existe
-        console.log(err);
+useEffect(() => {
+  navigation.setOptions(ChatHeader({ 
+    name: contact ? contact.username : chat.name, 
+    status,
+    backTitle: '2'
+  }))
+}, [status])
 
-      }
+useEffect(() => {
+  if (chat && user && socket) {
+    setPage(1) //reset value
+
+    // socket.emit('online', { userId: contact.userId })
+
+    // socket.on('userConnection', ({ connection }) => {
+    //   setStatus(connection)
+    // })
+
+    return () => { // close chat 
+      // socket.emit('offline', { userId: contact.userId })
+      // socket.off('userConnection')
+      // dispatch({ type: 'REQUEST_LOAD_MESSAGES', payload: { //limpa
+      //   accountId: user.id, chatIds: [chat.chatId], pageSize, pageOffset: 0 } 
+      // })
     }
   }
-
-  async function createChatDirectIfNotExist (writeMessage) {
-    try {
-      const { data: { value: [data] } } = await api.post('/chats', {
-        group: false,
-        name: contact.username,
-        about: contact.name,
-        chatMemberUserIds: [contact.userId],
-        messageContent: writeMessage.content
-      }, { responseType: 'json' })
-      setChat(data)
-    } catch (err) {
-      if (!err.response) { // network error
-        // console.log(err, ' ,_dd');
-        //... não tem jeito
-      } else { // http status code
-        // a algo de errado...
-        console.log(err, ' ,_dd');
-      }
-    }
-  }
+}, [user, socket, chat])
 
   async function handleSendMessage () {
     if(!text) return
-    const writeMessage = { 
-      chatId: chat?.id,
-      userId: user.id,
-      content: text,
-      self: true,
-      formatedDate: createDateFormat(Date.now())
+    try {
+      const writeMessage = { 
+        chatId: chat?.id,
+        userId: user.id,
+        content: text,
+        accountId: user?.id,
+      }
+      await sendMessage(writeMessage)
+      if (messages.length) flatListRef.current.scrollToIndex({animated: true, index: 0, viewPosition: 100  })
+    } catch (err) {
+      console.log(err, ' ,_dd')
     }
-    await saveMessage(writeMessage)
+    setLastText(text)
     setText(null)
   }
 
-  async function saveMessage (writeMessage: any) {
-    delete writeMessage.self
-    delete writeMessage.formatedDate
-    try {
-      if(!chat) {
-        if (!isGroup) await createChatDirectIfNotExist(writeMessage)
-      } else {
-        writeMessage.chatId = chat?.id
-        const localMessage = await Message.create(writeMessage) 
-        if (!messages) setMessages([localMessage])
-        else setMessages([...messages, localMessage])
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  }
+  const loadPage = useCallback(function (pageNumber = page, shouldRefresh = false) {
+    console.log('in loadPage', hasNextPage);
+    if (chat && hasNextPage) {
+          
+          dispatch({ type: 'REQUEST_LOAD_MESSAGES', payload: { 
+            added: true,
+            accountId: user.id, 
+            chatIds: [chat.id], 
+            pageSize, 
+            pageOffset: pageSize * pageNumber,
+          } })
 
-  async function loadChatMessages () {
-    if (!chat) return
-    try {
-      const localMessages = await ChatMessageModel.findAllbyChatId(chat.id)
-      if (localMessages) setMessages(localMessages)
-    } catch (err) {
-      console.log(err)      
-    }
-  }
-  
+          setPage(pageNumber + 1)
+        }
+  }, [page, chat ])
+
+  const onViewRef = React.useRef(({ viewableItems, changed }) => {
+    if (Array.isArray(viewableItems)) viewableItems.forEach(({ item }) => {
+      
+      const self = user.id === item.userId
+      if (socket && !self && !item.readDate) {
+
+        socket.emit('watchMessage', { 
+          chatId: item.chatId, 
+          messageId: item.messageId, 
+          readDate: new Date().toISOString()
+        })
+      }
+    });
+  })
+
   return (
-    <Container > 
-      <BackgroundContainerList
-        data={messages}
-        renderItem={({ item }) => ( <MessageBubble data={item}/>)}
-        keyExtractor={item => String(item.id)}
-      />
-      <ChatSendBar 
-        value={text} 
-        onChangeText={useCallback(setText, [text])} 
-        onPress={useCallback(handleSendMessage, [text])} 
-      />
+    <Container style={{ backgroundColor: 'black'}}> 
+      <ImageBackground
+        style={{ flex: 1 }}
+        source={{ uri: "https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"}}
+      >
+        <BackgroundContainerList
+          viewabilityConfig={{ 
+              minimumViewTime: 1, //milissegundos
+              // viewAreaCoveragePercentThreshold: 0, //porcentagem da viewport que deve ser cobeerta pelo item
+              itemVisiblePercentThreshold: 5, //porcentagem do item vizivel
+              // waitForInteraction: true,//somente quando a interções
+            }
+              //or
+            //useRef(viewConfig).current
+          }
+          onViewableItemsChanged={onViewRef.current}
+          ref={flatListRef}
+          inverted
+          data={messages}
+          onEndReached={() => loadPage(page, false)}
+          onEndReachedThreshold={.5}
+          renderItem={renderItem}
+          keyExtractor={item => String(item?.id)}
+          initialNumToRender={pageSize}
+          ListFooterComponent={type !== 'UPDATE' && type !== 'ADD' && loading && <Loading />}
+          ListHeaderComponent={type === 'ADD' && loading && <MessageBubble data={{ 
+            userId: self ? user.id : contact.userId,
+            content: self ? lastText : '...',
+            createdAt: new Date().toISOString()
+          }} />}
+          contentContainerStyle={{justifyContent: 'flex-end', flexGrow: 1,
+            paddingHorizontal: 10, paddingVertical: 5, 
+          }}
+          ListFooterComponentStyle={{ justifyContent: 'center', display: 'flex' }}
+        />
+        <ChatSendBar 
+          value={text} 
+          onChangeText={setText} 
+          onPress={useCallback(handleSendMessage, [text])} 
+        />
+      </ImageBackground>
     </Container>
   )
 }
+
+const renderItem = ({ item }) => <MessageBubble data={item} />
 
 export default Chat;

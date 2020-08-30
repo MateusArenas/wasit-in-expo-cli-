@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useCallback, memo, useRef } from 'react'
+import React, { useEffect, useState, useCallback, memo, useRef, useContext } from 'react'
 
 import * as ExpoContacts from 'expo-contacts';
 import api from '../services/api';
 import ContactModel from '../models/contact'
+import AuthContext from '../contexts/auth';
 
 interface useContactsI {
   contacts: Array<any>
@@ -14,6 +15,7 @@ interface useContactsI {
 }
 
 export default function useContacts(pageSize: number = 12) {
+  const { user } = useContext(AuthContext) 
   const [status, setStatus] = useState('')
   const [contacts, setContacts] = useState([])
   const [page, setPage] = useState(0)
@@ -39,7 +41,7 @@ export default function useContacts(pageSize: number = 12) {
   }
 
   const loadPage = useCallback(async function (pageNumber = page, shouldRefresh = false) {
-    if (status === 'granted' && nextPage) {
+    if (status === 'granted' && nextPage && user) {
         setLoading(true)
         const { data, hasNextPage } = await ExpoContacts.getContactsAsync({
           pageSize,// 10 por pagina
@@ -52,14 +54,16 @@ export default function useContacts(pageSize: number = 12) {
         });
 
         if (data.length > 0) {
-          const phones = data.map(contact => contact.phoneNumbers).flat().map(phoneNumber => phoneNumber.number)
+          const phones = data.map(contact => contact.phoneNumbers).flat().map(phoneNumber => phoneNumber?.number && phoneNumber.number)
+          
           try {
   
-            const { data : { value : apiData }} = await api.get('/users', { params: { phones } })
+            const { data : { value : apiData }} = await api .get('/users', { params: { phones } })
 
             const contactSchemas = apiData.map(currentUser => {
               if (!currentUser) return null
               return { 
+                accountId: user.id,
                 userId: currentUser.id,
                 name: currentUser.name,
                 username: currentUser.username,
@@ -69,7 +73,10 @@ export default function useContacts(pageSize: number = 12) {
             })
             
             try {
-              const localContacts = await ContactModel.bulkCreate(contactSchemas)
+              
+              const localContacts = await ContactModel.bulckCreated(contactSchemas, user.id) as any
+              console.log('io- ', localContacts);
+              
               setContacts(shouldRefresh ? localContacts : [...contacts, ...localContacts])
               setPage(pageNumber + 1)
               setNextPage(hasNextPage)
@@ -97,7 +104,7 @@ export default function useContacts(pageSize: number = 12) {
           }
         }
       }
-  }, [contacts, nextPage, page, status])
+  }, [contacts, nextPage, page, status, user])
 
 
   return { page, contacts, refreshList, loadPage, loading, refreshing } as useContactsI

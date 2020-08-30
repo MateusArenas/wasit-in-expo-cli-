@@ -16,29 +16,33 @@ import {
   InputCheckText,
   ActionInfoContainer
 } from '../styles';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation, useNavigationState } from '@react-navigation/native';
 import AuthContext from '../../../contexts/auth'
 import { useDebouncedCallback } from 'use-debounce'
+import useCheckOut from '../../../hooks/useCheckOut';
 
 const Password: React.FC = () => {
+  const { signUp, loading, error } = useContext(AuthContext)
   const refPassword = useRef(null)
   const refPasswordConfirm = useRef(null)
-  const [password, setPassword] = useState('')
-  const [passwordConfirm, setPasswordConfirm] = useState('')
-  const [loadingPassword, setLoadingPassword] = useState(false)
-  const [loadingPasswordConfirm, setLoadingPasswordConfirm] = useState(false)
+  const [password, setPassword] = useState('mateus')
+  const [passwordConfirm, setPasswordConfirm] = useState('mateus')
   const [errorPassword, setErrorPassword] = useState<string | null>(null)
   const [errorPasswordConfirm, setErrorPasswordConfirm] = useState<string | null>(null)
   const [steps, setSteps] = useState('password')
-  const route = useRoute()
-  const { username, phone } = route.params as any
-  const { signed, signIn, signUp, loading, error } = useContext(AuthContext)
   const [sucess, setSucess] = useState<any>({ password: false, passwordConfirm: false })
   const [debouncedCallbackPassword] = useDebouncedCallback(checkPassowrd, 1000)
   const [changeInput, setChangeInput] = useState<boolean>(false);
+  const route = useRoute()
+  const { username, phone } = route.params as any
+  const navigation = useNavigation()
+  const routeNames = useNavigationState(state => state.routeNames)
+  const routeNamesYe = useNavigationState(state => state.routes)
 
   useEffect(() => {
       targetInput(refPassword)
+      console.log(routeNamesYe, ' yeyeyeyeyye');
+      
   }, [])
 
   useEffect(() => {
@@ -91,7 +95,11 @@ const Password: React.FC = () => {
 
   async function nextStep () {
     if (password === passwordConfirm) {
+      console.log('routesnames .... ', routeNames);
+      console.log('antes do signup...')
       await signUp(username, phone, password)
+      navigation.navigate('Main')
+      // if (routeNames.includes('Main')) navigation.navigate('Main')
     } else {
       setErrorPassword('Os campos de senhas não são iguais')
       setErrorPasswordConfirm('Os campos de senhas não são iguais')

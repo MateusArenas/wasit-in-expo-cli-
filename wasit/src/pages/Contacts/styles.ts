@@ -4,7 +4,8 @@ import PullToRefresh from 'react-native-pull-to-refresh-custom';
 
 export const Container = styled.View`
   flex: 1;
-  background: #f9f9f9;
+  /* background: #f9f9f9; */
+  background-color: #F6F6F6;
 `
 
 export const ItemContainer = styled.View`
@@ -26,7 +27,7 @@ export const ItemPhone = styled.Text`
 export const ItemProfile = styled.View`
   width: 50px;
   height: 50px;
-  background: gray;
+  background: #F6F6F6;
   border-radius: 25px;
   margin-bottom: 5px;
 `
@@ -34,9 +35,9 @@ export const ItemProfile = styled.View`
 export const Loading = styled.ActivityIndicator.attrs({
   size: 'large',
   // color: '#909090'
-  color: '#065fd4'
+  color: '#4b9ed0'
 })`
-  margin: 30px 0;
+  margin: 15px 0;
 `
 
 export const PullToRefreshContainer = styled(PullToRefresh)`

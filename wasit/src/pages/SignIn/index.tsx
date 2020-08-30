@@ -4,17 +4,23 @@ import api from '../../services/api'
 
 import { Container, Input, Button, ButtonText } from './styles'
 import { TouchableHighlight, Text, Keyboard } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useRoute, useNavigationState } from '@react-navigation/native'
 
 const SignIn: React.FC = () => {
   const [username, setUsername] = useState('arenas_math')
-  const [password, setPassword] = useState('mateus45781973')
+  const [password, setPassword] = useState('mateus')
   const { signed, signIn } = useContext(AuthContext)
   const navigation = useNavigation()
+  const routeNames = useNavigationState(state => state.routeNames)
 
   async function login () {
-    await signIn(username, password)
-    Keyboard.dismiss()
+    try {
+      Keyboard.dismiss()
+      await signIn(username, password)
+      if (routeNames.includes('Main')) navigation.navigate('Main')
+    } catch(err) {
+
+    }
   }
 
   useEffect(() => {

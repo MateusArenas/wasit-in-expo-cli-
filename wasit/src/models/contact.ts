@@ -1,7 +1,8 @@
 import * as SQLite from 'expo-sqlite'
 
-interface MessageSchema {
+interface ContactSchema {
   id?: number
+  accountId?: number
   content?: string
   self?: boolean
   createdAt?: number
@@ -12,7 +13,7 @@ interface MessageSchema {
 export default class Contact {
  
   static get tableName() {
-    return 'contact'
+    return 'contact_pp'
   }
 
   static get database () {
@@ -32,6 +33,7 @@ export default class Contact {
             username TEXT UNIQUE,
             phone TEXT UNIQUE,
             bio TEXT,
+            accountId INT,
             createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
           );
         `
@@ -79,7 +81,55 @@ export default class Contact {
     )
   }
 
+  static bulckCreated (rows: Array<ContactSchema>, accountId: any) {
+    const query = rows.slice().map(params => {
+      const keys = Object.keys(params)
+      const lineKeys = keys.join(', ')
+      const values = Object.values(params)
+      const questions = '? ' + ', ?'.repeat(values.length - 1)
+  
+      const query = `
+        INSERT OR IGNORE INTO ${this.tableName} (${lineKeys}) 
+        VALUES (${questions});
+      
+      `
+      return query
+    }).join('')
 
+    const values = rows.slice().map(params => {
+      return Object.values(params)
+    }).flat() 
+
+    console.log('ckec', query, values);
+    
+
+    return new Promise(
+      (resolve, reject) => {
+        this.database.transaction(
+        tx => {
+          tx.executeSql(query, values, (_, { rows }) => {
+              
+            // resolve(rows.item(0))
+            }, (_, err) => {
+              console.log(err, ' query-r');
+              reject(err)
+              return false
+            }
+          );
+            //WHERE accountId = ? ORDER BY id DESC LIMIT ${rows.length} OFFSET 0;`, [accountId]
+            tx.executeSql(`SELECT * FROM ${this.tableName} WHERE accountId = ? ORDER BY id DESC LIMIT ${rows.length} OFFSET 0;`, [accountId], (_,{ rows }) => {
+            console.log('pop-= ', rows['_array']);
+            
+            resolve(rows['_array'])
+          }, (_, err) => {
+            console.log(err, ' query-r');
+            reject(err)
+            return false
+          })
+        },null)
+      }
+    )
+  }
   
   static bulkCreate (rows: any, work: string = 'return'): Promise<Array<any>> {
     return new Promise(

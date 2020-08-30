@@ -1,20 +1,13 @@
-import React, { useContext } from 'react'
-import { View, Text, TouchableHighlight } from 'react-native'
-import AuthContext from '../../contexts/auth'
+import React from 'react'
+import { View, Text } from 'react-native'
 
 // import { Container } from './styles';
 
 const Feed: React.FC = () => {
-  const { signed, signIn, signOut } = useContext(AuthContext)
-  
 
   return (
-    <View>
-      <TouchableHighlight
-        onPress={signOut}
-      >
-        <Text>Feed</Text>
-      </TouchableHighlight>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F6F6F6" }}>
+      <Text style={{ fontSize: 20, color: "black", fontWeight: "bold" }} >FEED</Text>
     </View>
   )
 }

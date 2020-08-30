@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext, } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { 
   Container, 
@@ -18,14 +18,14 @@ import {
   ActionInfoContainer
 } from '../styles';
 import { useNavigation } from '@react-navigation/native';
-import AuthContext from '../../../contexts/auth';
+import useCheckOut from '../../../hooks/useCheckOut';
 
 const User: React.FC = () => {
+  const { checkUsername, checkPhoneFake, loading, error } = useCheckOut()
   const refUsername = useRef(null)
   const refPhone = useRef(null)
-  const [username, setUsername] = useState('')
-  const [phone, setPhone] = useState('')
-  const { checkUsername, checkPhoneFake, loading, error } = useContext(AuthContext)
+  const [username, setUsername] = useState('arenas_math')
+  const [phone, setPhone] = useState('45781973')
   const [debouncedCallbackUsername] = useDebouncedCallback(checkUsername, 1000)
   const [debouncedCallbackPhone] = useDebouncedCallback(checkPhoneFake, 1000)
   const [steps, setSteps] = useState('username')

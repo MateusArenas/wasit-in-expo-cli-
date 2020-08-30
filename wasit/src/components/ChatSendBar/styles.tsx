@@ -3,38 +3,48 @@ import styled from 'styled-components/native';
 export const Container = styled.View`
   flex-direction: row;
   justify-content: space-between;
-  background-color: white;
-  padding: 5px;
+  align-items: flex-end;
+  padding: 6px;
+  background-color: #F6F6F6;
+  border-top-color: rgba(0,0,0, .1);
+  border-top-width: 1px;
 `;
 
 export const TypeMessage = styled.TextInput`
-  flex: 1;
-  border: 2px solid rgba(0,0,0,0.5);
+  /* flex: 1; */
+  /* flex-grow: 1; */
+  width: 80%;
   font-size: 16px;
-  padding: 10px;
-  border-radius: 2px;
   min-height: 30px;
   max-height: 120px;
 `;
 
-export const SendContainer = styled.View`
-  justify-content: flex-end;
-  align-items: center;
-  margin-left: 5px;
+export const TypeContainer = styled.View`
+  flex: 1;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  border: 1px solid rgba(0,0,0, .1);
+  padding: 2px 15px;
+  padding-bottom: 4px;
+  padding-right: 6px;
+  border-radius: 20px;
+  background-color: white;
 `;
 
-export const SendButton = styled.TouchableHighlight`
+export const ActionButton = styled.TouchableHighlight`
   justify-content: center;
   align-items: center;
-  padding: 0 15px 0 15px;
-  border-radius: 5px;
-  background-color: rgba(255,255,255,0.05);
-  border: 2px solid rgba(0,0,0,0.5);
-  
+  padding: 2px 10px;
+  border-radius: 50px;
+  align-items: center;
+  justify-content: center;
+  /* background-color: steelblue; */
+  /* border: 2px solid rgba(0,0,0,0.1); */
 `;
 
 export const SendTitle = styled.Text`
-  padding: 15px 10px 15px 10px;
+  /* padding: 10px; */
   color: gray;
   /* color: ${({ active }) => active ? 'black' : 'gray'}; */
 `;
