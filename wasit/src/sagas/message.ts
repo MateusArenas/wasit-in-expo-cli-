@@ -2,11 +2,11 @@ import { all, takeEvery, put, call } from 'redux-saga/effects'
 import Message from '../models/chatMessage';
 
 function* assyncLoadMessages (action) {
-  const { accountId, chatIds, added, pageSize, pageOffset } = yield action.payload;
+  const { accountId, orArray, added, pageSize, pageOffset } = yield action.payload;
   try {
     console.log('in assyncLoadMessages');
     
-    const localMessages = yield Message.findAll({ accountId, chatIds }, { 
+    const localMessages = yield Message.findAll({ accountId, orArray }, { 
       limit: pageSize, offset: pageOffset 
     })
 
@@ -40,8 +40,12 @@ function* actionLoadMessages() {
 
 function* assyncAddMessage (action) {
   const { message, self, socket } = yield action.payload;
+  console.log('in assyncAddMessage');
   try {
+    
     const localMessage = yield Message.create(message) 
+
+    console.log('save message... ', localMessage);
 
     yield put({ type: 'SUCCESS_ADD_MESSAGE', payload: { 
       message: localMessage,
@@ -49,10 +53,12 @@ function* assyncAddMessage (action) {
     } })
     
     if (self && socket) {
-      yield socket.emit('sendMessage', {...localMessage, messageId: localMessage.id })
+      yield socket.emit('sendMessage', {...localMessage, originId: localMessage.id })
     }
     
   } catch(err) {
+    console.log(err);
+    
     yield put({ type: 'FAILURE_ADD_MESSAGE', payload: { 
       error: err + ' ',
     } });

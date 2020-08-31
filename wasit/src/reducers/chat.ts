@@ -55,7 +55,10 @@ const requestAdd = (state = INITIAL_STATE,  action) => ({
 });
 
 const successAdd = (state = INITIAL_STATE,  action) => ({
-    data: [...state.data, action.payload?.chat],
+    data: state.data.find(chat => chat.id === action.payload?.chat.id) ?
+          state.data.map(chat => 
+            chat.id === action.payload?.chat.id ? action.payload?.chat : chat )
+          : [...state.data, action.payload?.chat],
     loading: false,
     error: null,
   })

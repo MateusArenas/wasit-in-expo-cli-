@@ -2,8 +2,7 @@ import * as SQLite from 'expo-sqlite'
 
 interface ChatSchema {
   id?: number
-  chatId?: number
-  group?: number
+  groupId?: number
   directId?: number
   name?: string
   about?: string 
@@ -28,10 +27,9 @@ export default class Chat {
     this.database.transaction(tx => {
       tx.executeSql(
         `create table if not exists ${this.tableName} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chatId INT NOT NULL,
-            'group' BOOLEAN,
-            directId INT,
+            id INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
+            groupId INT UNIQUE,
+            directId INT UNIQUE,
             name TEXT,
             about TEXT,
             accountId INT NOT NULL,
@@ -75,7 +73,7 @@ export default class Chat {
         },null)
       }
     )
-  }
+  }// ok
 
   static findAndSetMessageId (id, messageId) {
 
@@ -119,14 +117,14 @@ export default class Chat {
 
     const query = `
       INSERT OR REPLACE INTO ${this.tableName} (id, ${lineKeys}) 
-      VALUES ((SELECT id FROM ${this.tableName} WHERE accountId = ? AND chatId = ? ), ${questions});
+      VALUES ((SELECT id FROM ${this.tableName} WHERE accountId = ? AND ( groupId = ? OR directId = ? ) ), ${questions});
     `
 
     return new Promise(
       (resolve, reject) => {
         this.database.transaction(
         tx => {
-          tx.executeSql(query, [params.accountId, params.chatId, ...values], (_, { rows }) => {
+          tx.executeSql(query, [params.accountId, params.groupId, params.directId, ...values], (_, { rows }) => {
               
             // resolve(rows.item(0))
             }, (_, err) => {

@@ -19,6 +19,7 @@ interface MessageBubblePropsI {
     formatedDate?: number
     createdAt?: string
     readDate?: string
+    receivedDate?: string
     messageId?: number
   }
 }
@@ -40,8 +41,10 @@ const MessageBubble : React.FC<MessageBubblePropsI> = (props) => {
             </BubbleContentText>
             {formatedDate && <BubbleDateText self={self}>
               {formatedDate + ' '}
-              {/* <MaterialCommunityIcons name="check" size={14} color="#909090" /> */}
-              {self && <MaterialCommunityIcons name="check-all" size={14} color={ data.readDate ? "#4b9ed0" : "#909090" } />}
+              {
+                !data.receivedDate ? <MaterialCommunityIcons name="check" size={14} color="#909090" />
+                : self && <MaterialCommunityIcons name="check-all" size={14} color={ data.readDate ? "#4b9ed0" : "#909090" } />
+              }
             </BubbleDateText> }
             <ArrowContainer 
               self={self}

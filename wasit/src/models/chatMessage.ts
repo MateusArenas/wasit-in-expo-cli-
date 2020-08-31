@@ -8,14 +8,17 @@ interface ChatMessageSchema {
   createdAt?: number
   userId?: number
   chatId?: number
-  messageId?: number
+  directId?: number
+  groupId?: number
+  originId?: number
   readDate?: string 
+  receivedDate?: string 
 }
 
 export default class ChatMessage {
  
   static get tableName() {
-    return 'chat_message'
+    return 'chat_messageS'
   }
 
   static get database () {
@@ -30,13 +33,16 @@ export default class ChatMessage {
       tx.executeSql(
         `create table if not exists ${this.tableName} (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            originId INT,
             accountId INT NOT NULL,
-            messageId INT,
             content TEXT NOT NULL,
             userId INT,
             chatId INT,
+            directId INT,
+            groupId INT,
             createdAt DATE DEFAULT (datetime('now','localtime')),
-            readDate TEXT
+            readDate TEXT,
+            receivedDate TEXT
           );
         `
       );
@@ -78,10 +84,10 @@ export default class ChatMessage {
     )
   }
 
-  static findAndSetMessageId (id, messageId) {
+  static findAndSetMessageId (id, originId) {
 
     const query = `
-      UPDATE OR IGNORE ${this.tableName} SET messageId = ?
+      UPDATE OR IGNORE ${this.tableName} SET originId = ?
       WHERE id = ?;
     `
 
@@ -89,7 +95,7 @@ export default class ChatMessage {
       (resolve, reject) => {
         this.database.transaction(
         tx => {
-          tx.executeSql(query, [messageId, id], (_, { rows }) => {
+          tx.executeSql(query, [originId, id], (_, { rows }) => {
               
             // resolve(rows.item(0))
             }, (_, err) => {
@@ -166,14 +172,26 @@ export default class ChatMessage {
     )
   }
 
-  static findAll({ accountId, chatIds }, { limit, offset }): Promise<any> {
-    const queryOR = ' chatId = ? ' + 'OR chatId = ? '.repeat(chatIds.length - 1)
+  static findAll({ accountId, orArray }, { limit, offset }): Promise<any> {
+    const queryOr = orArray.flatMap(line => {
+      const attrs = Object.keys(line);
+      const query = attrs.map(attr => {
+         return line[attr] && `${attr} = ?`
+      })
+      return query.join('') 
+    }).join(' OR ')
 
-    const query = `SELECT * FROM ${this.tableName} WHERE accountId = ? AND (${queryOR}) ORDER BY id DESC LIMIT ${limit} OFFSET ${offset};`
+    const values = orArray.flatMap(line => {
+      const attrs = Object.values(line);
+
+      return attrs.filter(attr => attr !== null)
+    })
+
+    const query = `SELECT * FROM ${this.tableName} WHERE accountId = ? AND (${queryOr}) ORDER BY id DESC LIMIT ${limit} OFFSET ${offset};`
     return new Promise(
       (resolve, reject) => {
         this.database.transaction(tx => {
-        tx.executeSql(query, [accountId, ...chatIds], (_, { rows }) => {
+        tx.executeSql(query, [accountId, ...values], (_, { rows }) => {
             resolve(rows['_array'])
         }, (_, err) => {
           console.log(err);

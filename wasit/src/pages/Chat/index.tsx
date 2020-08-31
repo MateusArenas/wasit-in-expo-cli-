@@ -31,8 +31,8 @@ const Chat: React.FC<any> = (props: any) => {
   const { user } = useContext(AuthContext)
   const navigation = useNavigation()
   const { params } = useRoute()
-  const { contact, isGroup, chatId } = params as any
-  const { chat, sendMessage } = useChat({ contact, chatId, socket })
+  const { contact, directId, groupId } = params as any
+  const { chat, sendMessage } = useChat({ contact, directId, groupId, socket })
   const [text, setText] = useState<string | null>(null)
   const [lastText, setLastText] = useState<string | null>(null)
 
@@ -42,7 +42,7 @@ const Chat: React.FC<any> = (props: any) => {
   const { data: messages, type, self, loading, hasNextPage } = useSelector(({ messages }) => {
     return ({ 
       ...messages,
-      data: messages?.data.filter(message => message?.chatId === chat?.chatId),
+      data: messages?.data.filter(message => message?.directId === chat?.directId),
     })
   }, [chat])
 
@@ -50,7 +50,7 @@ const Chat: React.FC<any> = (props: any) => {
 
 useEffect(() => {
   navigation.setOptions(ChatHeader({ 
-    name: contact ? contact.username : chat.name, 
+    name: chat ? chat.name : contact?.username,
     status,
     backTitle: '2'
   }))
@@ -80,6 +80,8 @@ useEffect(() => {
     if(!text) return
     try {
       const writeMessage = { 
+        directId: chat ? chat.directId : contact?.userId,
+        groupId: chat?.groupId,
         chatId: chat?.id,
         userId: user.id,
         content: text,
@@ -101,7 +103,7 @@ useEffect(() => {
           dispatch({ type: 'REQUEST_LOAD_MESSAGES', payload: { 
             added: true,
             accountId: user.id, 
-            chatIds: [chat.id], 
+            orArray: [{ directId: chat.directId, groupId: chat.groupId }], 
             pageSize, 
             pageOffset: pageSize * pageNumber,
           } })
@@ -117,8 +119,8 @@ useEffect(() => {
       if (socket && !self && !item.readDate) {
 
         socket.emit('watchMessage', { 
-          chatId: item.chatId, 
-          messageId: item.messageId, 
+          directId: item.directId, 
+          originId: item.originId, 
           readDate: new Date().toISOString()
         })
       }
@@ -152,7 +154,7 @@ useEffect(() => {
           initialNumToRender={pageSize}
           ListFooterComponent={type !== 'UPDATE' && type !== 'ADD' && loading && <Loading />}
           ListHeaderComponent={type === 'ADD' && loading && <MessageBubble data={{ 
-            userId: self ? user.id : contact.userId,
+            userId: self ? user.id : contact ? contact?.userId : chat?.directId,
             content: self ? lastText : '...',
             createdAt: new Date().toISOString()
           }} />}

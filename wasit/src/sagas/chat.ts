@@ -11,7 +11,7 @@ function* assyncLoadChats (action) {
     })
 
     try {
-      const { data: { value: data } } = yield api.get('/chats')
+      const { data: { value: data } } = yield api.get('/groups')
 
       if (data.length) {
         yield put({ type: 'SUCCESS_LOAD_CHATS', payload: { 
@@ -61,22 +61,18 @@ function* actionLoadChats() {
 function* assyncAddChat (action) {
   const { chat, sendTo, message, socket, user } = yield action.payload;
   try {
-    const localMessage = yield message ? ChatMessage.create(message) : null
+    
+    const localChat = yield Chat.create(chat) 
+    const localMessage = yield message ? ChatMessage.create({...message, chatId: localChat.id}) : null
     if (message) yield put({ type: 'SUCCESS_ADD_MESSAGE', payload: { 
       message: localMessage
     } })
-
-    const localChat = yield Chat.create(chat) 
-
 
     if (socket) {
       if (sendTo?.userId) yield socket.emit('callToJoinChatRoom', { 
         receiverId: sendTo?.userId,
         chat: { ...localChat, name: user.username, about: user.about},
-        message: message ? { 
-          ...localMessage, 
-          messageId: localMessage.id  //
-        } : null
+        message: {...localMessage, originId: localMessage.id}
       })
     }
     

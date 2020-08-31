@@ -5,7 +5,7 @@ interface ChatMemberSchema {
   accountId?: number
   admin?: boolean
   userId?: number
-  chatId?: number
+  groupId?: number
   createdAt?: Date
 }
 
@@ -30,7 +30,7 @@ export default class ChatMember {
             accountId INT NOT NULL,
             admin BOOLEAN,
             userId INT,
-            chatId INT,
+            groupId INT,
             name TEXT,
             createdAt DATE DEFAULT (datetime('now','localtime'))
           );

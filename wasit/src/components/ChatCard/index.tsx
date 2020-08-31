@@ -19,13 +19,13 @@ const ChatCard: React.FC<any> = (props: any) => {
 
   const formatedDate = createDateFormat(props?.chat?.lastMessage?.createdAt)
 
-  function handleOpenChat (chatId) {
-      navigation.navigate('Chat', { chatId, isGroup: false })
+  function handleOpenChat (directId, groupId) {
+      navigation.navigate('Chat', { directId, groupId })
   }
 
   return (
     <TouchableHighlight
-    onPress={() => handleOpenChat(props?.chat.chatId)}
+    onPress={() => handleOpenChat(props?.chat.directId, props?.chat.groupId)}
     >
       <Container>
         <ChatImage />

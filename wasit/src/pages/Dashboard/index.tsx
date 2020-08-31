@@ -8,7 +8,9 @@ import { useDispatch, useSelector } from 'react-redux'
 const Dashboard: React.FC = () => {
   const { data:chats, loading } = useSelector(({ chats, messages }) => {
     const data = chats?.data.map(chat => {
-      const lastMessage = messages?.data.find(message => message.chatId === chat.chatId)
+      const lastMessage = messages?.data.find(message =>
+         message.directId === chat.directId && message.groupId === chat.groupId
+      )
       return {...chat, lastMessage}
     })
     return { ...chats, data }
